@@ -22,7 +22,7 @@ export default function Chat() {
   const [currentUser, setCurrentUser] = useState<{
     id: number;
     user: string;
-   } | null>(null);
+  } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -36,32 +36,36 @@ export default function Chat() {
       router.push("/login");
     }
 
-    const serverHost = process.env.SERVER_HOST || 'localhost'
+    // Configura o WebSocket, conectando ao servidor.
+    const serverHost = process.env.SERVER_HOST || "localhost";
     const ws = io(`http://${serverHost}:3001`, { transports: ["websocket"] });
     setSocket(ws);
-  
+
+    // Evento de conexão ao WebSocket.
     ws.on("connect", () => {
       console.log("Conectado ao WebSocket");
 
-      ws.emit("register", JSON.stringify({ 
-        type: "register", 
-        user: currentUsers?.id, 
-        name: currentUsers?.user 
-      }));
+      // Registra o usuário no servidor WebSocket.
+      ws.emit(
+        "register",
+        JSON.stringify({
+          type: "register",
+          user: currentUsers?.id,
+          name: currentUsers?.user,
+        })
+      );
     });
 
+    // Evento para receber mensagens do servidor.
     ws.on("message", (event) => {
-      const data = JSON.parse(event);
-      const userId = users.find((item) => item.user === data.from)?.id
+      const data = JSON.parse(event); // Converte a mensagem recebida para JSON.
       setMessages((prev) => [...prev, data]);
-      // if (data.type === "message" && Number(userId) === Number(id)) {
-      //   setMessages((prev) => [...prev, data]);
-      // }
     });
 
-    setSocket(ws)
+    setSocket(ws);
 
     return () => {
+      // Cleanup: desconecta do WebSocket ao desmontar o componente.
       if (ws) {
         ws.disconnect();
         console.log("Desconectado do WebSocket");
@@ -76,12 +80,12 @@ export default function Chat() {
 
   interface WebSocketMessage {
     type: string;
-    user?: string;
-    to?: string;
-    from?: string;
-    content?: string;
+    to: string;
+    from: string | undefined;
+    content: string;
   }
 
+  // Função para enviar mensagens.
   const sendMessage = (content: string) => {
     if (socket && id) {
       const message: WebSocketMessage = {
@@ -90,7 +94,7 @@ export default function Chat() {
         from: currentUser?.user,
         content,
       };
-      socket.send(JSON.stringify(message));
+      socket.send(JSON.stringify(message)); // Envia a mensagem via WebSocket.
       setMessages((prev: Message[]) => [
         ...prev,
         { from: currentUser!.user, content },
