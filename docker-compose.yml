@@ -10,12 +10,14 @@ services:
     image: smartmes-chat-server
     container_name: smartmes-chat-server
     restart: on-failure
+    environment:
+      DB_HOST: mysql
     networks:
       - smartmes
     ports:
       - "3001:3001"
     depends_on:
-      - mongodb
+      - mysql
 
   reactApp:
     build:
@@ -24,25 +26,31 @@ services:
     image: smartmes-chat-client
     container_name: smartmes-chat-client
     restart: on-failure
+    environment:
+      SERVER_HOST: backendApp
     networks:
       - smartmes
     ports:
-      - "3000:3000"
+      - "8080:3000"
     depends_on:
       - backendApp
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    restart: always
+
+  mysql:
+    image: mysql:8.0.20
+    container_name: smartmes-mysql-db
+    environment:
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: toor
+      MYSQL_DATABASE: chat_db
+      TZ: America/Belem
+    restart: on-failure
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/docker-entrypoint-initdb.d/
     networks:
       - smartmes
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: admin
-    volumes:
-      - mongodb_data:/data/db
 
 volumes:
-  mongodb_data:
+  mysql-data:
+    driver: local

@@ -36,7 +36,8 @@ export default function Chat() {
       router.push("/login");
     }
 
-    const ws = io("http://localhost:3001");
+    const serverHost = process.env.SERVER_HOST || 'localhost'
+    const ws = io(`http://${serverHost}:3001`, { transports: ["websocket"] });
     setSocket(ws);
   
     ws.on("connect", () => {

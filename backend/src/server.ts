@@ -2,7 +2,7 @@ import express, { Application } from 'express';
 import http from 'http';
 import { Server, Socket } from 'socket.io';
 import 'reflect-metadata';
-import { AppDataSource, initializeDataSource } from './datasource'; // Importa o DataSource do banco
+import { AppDataSource, initializeDataSource } from './datasource';
 import { Message } from './entities/Message';
 
 class App {
@@ -17,9 +17,10 @@ class App {
     this.http = http.createServer(this.app);
     this.io = new Server(this.http, {
       cors: {
-        origin: "http://localhost:3000", // Ajuste conforme sua aplicação frontend
+        origin: "http://localhost:3000",
         methods: ["GET", "POST"],
       },
+      transports: ["websocket"],
     });
     this.users = new Map();
     this.port = 3001;
@@ -38,6 +39,7 @@ class App {
       socket.on('register', (userId: string) => {
         const registeredUser = JSON.parse(userId);
         this.users.set(Number(registeredUser.user), socket.id);
+        console.log(this.users)
       });
       
       socket.on('message', async (data) => {
@@ -45,7 +47,6 @@ class App {
         
         const { to, from, content, type } = JSON.parse(data);
         console.log(`Attempting to send message to: ${to}`);
-        console.log(this.users)
         const recipientSocketId = this.users.get(Number(to));
         console.log(`Recipient Socket ID: ${recipientSocketId}`);
       
@@ -81,6 +82,7 @@ class App {
             console.log(`User ${userId} removed from active connections`);
             break;
           }
+          console.log(this.users)
         }
       });
     });

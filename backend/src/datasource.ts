@@ -1,4 +1,3 @@
-// src/datasources.ts
 import { createConnection, Connection, ConnectionOptions } from 'mysql2/promise';
 import { DataSource } from 'typeorm';
 import { Message } from './entities/Message';
@@ -8,14 +7,13 @@ const DATABASE_NAME = 'chat_db';
 
 export const checkAndCreateDatabase = async () => {
   const connection = await createConnection({
-    host: 'localhost',
+    host: process.env.DB_HOST || 'localhost',
     user: 'root',
     password: 'toor',
   });
 
   try {
-    const [rows] = await connection.query('SHOW DATABASES LIKE "chat_db"');
-  
+    const [rows] = await connection.query(`SHOW DATABASES LIKE "${DATABASE_NAME}"`);
 
     if ((rows as any[]).length === 0) {
       console.log('Banco de dados não encontrado. Criando banco...');
@@ -28,7 +26,7 @@ export const checkAndCreateDatabase = async () => {
 
 export const AppDataSource = new DataSource({
     type: 'mysql',
-    host: 'localhost',
+    host: process.env.DB_HOST || 'localhost',
     port: 3306,
     username: 'root',
     password: 'toor',
