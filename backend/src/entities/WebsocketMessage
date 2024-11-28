@@ -1,0 +1,7 @@
+export interface WebSocketMessage {
+  type: string;
+  user?: string;
+  to?: string;
+  from?: string;
+  content?: string;
+}

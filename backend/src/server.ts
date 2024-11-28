@@ -1,20 +1,23 @@
 import express, { Application } from 'express';
 import http from 'http';
 import { Server, Socket } from 'socket.io';
+import 'reflect-metadata';
+import { AppDataSource, initializeDataSource } from './datasource'; // Importa o DataSource do banco
+import { Message } from './entities/Message';
 
 class App {
   private app: Application;
   private http: http.Server;
   private io: Server;
   private users: Map<number, string>;
-  private port: number
+  private port: number;
 
   constructor() {
     this.app = express();
     this.http = http.createServer(this.app);
     this.io = new Server(this.http, {
       cors: {
-        origin: "http://localhost:3000",
+        origin: "http://localhost:3000", // Ajuste conforme sua aplicação frontend
         methods: ["GET", "POST"],
       },
     });
@@ -33,16 +36,16 @@ class App {
       console.log('User connected =>', socket.id);
       
       socket.on('register', (userId: string) => {
-        const registeredUser = JSON.parse(userId)     
+        const registeredUser = JSON.parse(userId);
         this.users.set(Number(registeredUser.user), socket.id);
       });
       
-      socket.on('message', (data) => {
+      socket.on('message', async (data) => {
         console.log('Message received:', data);
         
-        const { to, from, content } = JSON.parse(data);;
+        const { to, from, content, type } = JSON.parse(data);
         console.log(`Attempting to send message to: ${to}`);
-      
+        console.log(this.users)
         const recipientSocketId = this.users.get(Number(to));
         console.log(`Recipient Socket ID: ${recipientSocketId}`);
       
@@ -54,6 +57,17 @@ class App {
             content,
           };
           this.io.to(recipientSocketId).emit('message', JSON.stringify(message));
+
+          const messageRepository = AppDataSource.getRepository(Message);
+          const newMessage = new Message(to, from, content, type);
+
+          try {
+            await messageRepository.save(newMessage);
+            console.log('Message saved to database:', newMessage);
+          } catch (error) {
+            console.error('Error saving message to database:', error);
+          }
+
         } else {
           console.log(`User ${to} is not connected`);
         }
@@ -88,4 +102,6 @@ interface WebSocketMessage {
 }
 
 const app = new App();
-app.listenServer();
+initializeDataSource().then(() => {
+  app.listenServer();
+});

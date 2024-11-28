@@ -14,6 +14,8 @@ services:
       - smartmes
     ports:
       - "3001:3001"
+    depends_on:
+      - mongodb
 
   reactApp:
     build:
@@ -28,3 +30,19 @@ services:
       - "3000:3000"
     depends_on:
       - backendApp
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    networks:
+      - smartmes
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
