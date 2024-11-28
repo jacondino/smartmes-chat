@@ -7,6 +7,7 @@ class App {
   private http: http.Server;
   private io: Server;
   private users: Map<number, string>;
+  private port: number
 
   constructor() {
     this.app = express();
@@ -18,26 +19,25 @@ class App {
       },
     });
     this.users = new Map();
+    this.port = 3001;
     this.listenSocket();
     this.setupRoutes();
   }
 
   listenServer() {
-    this.http.listen(3001, () => console.log(`Server is running on http://localhost:3001`));
+    this.http.listen(this.port, () => console.log(`Server is running on http://localhost:${this.port}`));
   }
 
   listenSocket() {
     this.io.on('connection', (socket: Socket) => {
       console.log('User connected =>', socket.id);
-
-      socket.on('register', (userId: string) => {
-        const registeredUser = JSON.parse(userId)
-        const registeredUserId = registeredUser.user
       
-        this.users.set(registeredUserId as number, socket.id);
+      socket.on('register', (userId: string) => {
+        const registeredUser = JSON.parse(userId)     
+        this.users.set(Number(registeredUser.user), socket.id);
       });
       
-      socket.on('message', async (data) => {
+      socket.on('message', (data) => {
         console.log('Message received:', data);
         
         const { to, from, content } = JSON.parse(data);;

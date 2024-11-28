@@ -1,0 +1,30 @@
+networks:
+  smartmes:
+    driver: bridge
+
+services:
+  backendApp:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: smartmes-chat-server
+    container_name: smartmes-chat-server
+    restart: on-failure
+    networks:
+      - smartmes
+    ports:
+      - "3001:3001"
+
+  reactApp:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: smartmes-chat-client
+    container_name: smartmes-chat-client
+    restart: on-failure
+    networks:
+      - smartmes
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backendApp
