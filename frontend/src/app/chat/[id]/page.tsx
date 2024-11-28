@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { io, Socket } from "socket.io-client";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
 
@@ -17,11 +18,11 @@ export default function Chat() {
   const [messages, setMessages] = useState<{ from: string; content: string }[]>(
     []
   );
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [currentUser, setCurrentUser] = useState<{
     id: number;
     user: string;
-  } | null>(null);
+   } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -35,23 +36,36 @@ export default function Chat() {
       router.push("/login");
     }
 
-    const ws = new WebSocket("ws://ENDPOINT_WEBSOCKET");
+    const ws = io("http://localhost:3001");
     setSocket(ws);
-
-    ws.onopen = () => {
+  
+    ws.on("connect", () => {
       console.log("Conectado ao WebSocket");
 
-      ws.send(JSON.stringify({ type: "register", user: currentUsers?.user }));
-    };
+      ws.emit("register", JSON.stringify({ 
+        type: "register", 
+        user: currentUsers?.id, 
+        name: currentUsers?.user 
+      }));
+    });
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "message" && data.from === id) {
-        setMessages((prev) => [...prev, data]);
+    ws.on("message", (event) => {
+      const data = JSON.parse(event);
+      const userId = users.find((item) => item.user === data.from)?.id
+      setMessages((prev) => [...prev, data]);
+      // if (data.type === "message" && Number(userId) === Number(id)) {
+      //   setMessages((prev) => [...prev, data]);
+      // }
+    });
+
+    setSocket(ws)
+
+    return () => {
+      if (ws) {
+        ws.disconnect();
+        console.log("Desconectado do WebSocket");
       }
     };
-
-    return () => ws.close();
   }, [id]);
 
   interface Message {
